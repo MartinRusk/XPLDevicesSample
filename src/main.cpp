@@ -1,41 +1,42 @@
 #include <Arduino.h>
-#include <XPLDirect.h>
-#include <Button.h>
-#include <Encoder.h>
-#include <Switch.h>
-#include <LedShift.h>
-#include <Timer.h>
-#include <DigitalIn.h>
-#include <AnalogIn.h>
+#include <XPLDevices.h>
 
-Button btnNavFF(2);
-Encoder encNavVol(3, 4, 5, eEnc4Pulse);
+Button btnStart(2);
+Encoder encHeading(3, 4, 5, enc4Pulse);
 Switch swStrobe(6);
+long strobe;
 
-void setup() {
-  Serial.begin(XPLDIRECT_BAUDRATE);
+// setup function
+void setup() { 
+  // setup interface
   XP.begin("Sample");
 
-  btnNavFF.setCommand(
-      XP.registerCommand(F("sim/GPS/g1000n3_nav_ff")));
-  encNavVol.setCommand(
-      XP.registerCommand(F("sim/GPS/g1000n1_nvol_up")),
-      XP.registerCommand(F("sim/GPS/g1000n1_nvol_dn")),
-      XP.registerCommand(F("sim/GPS/g1000n1_nvol")));
+  // register Commands
+  btnStart.setCommand(
+      XP.registerCommand(F("sim/starters/engage_starter_1")));
+
+  encHeading.setCommand(
+    XP.registerCommand(F("sim/autopilot/heading_up")),
+    XP.registerCommand(F("sim/autopilot/heading_down")),
+    XP.registerCommand(F("sim/autopilot/heading_sync")));
+  
   swStrobe.setCommand(      
       XP.registerCommand(F("sim/lights/strobe_lights_on")),
       XP.registerCommand(F("sim/lights/strobe_lights_off")));
+  
+  // register DataRefs
+  XP.registerDataRef(F("sim/cockpit/electrical/strobe_lights_on"), XPL_READ, 100, 0, &strobe);
 }
 
+// loop function
 void loop() {
+  // handle interface
   XP.xloop();
 
-  btnNavFF.handleCommand();
-  encNavVol.handleCommand();
-  swStrobe.handleCommand();
+  // handle all devices and process commands
+  btnStart.handleXP();
+  encHeading.handleXP();
+  swStrobe.handleXP();
 
-  if (swStrobe.state() == eSwitchOn)
-  {
-    //do something
-  }
+  digitalWrite(LED_BUILTIN, (strobe > 0));
 }
